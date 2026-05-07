@@ -1,5 +1,4 @@
 # Complete V2 ↔ V1 Order Creation & Synchronization Guide
-## New Intern / New Joiner Onboarding Reference
 
 **Welcome!** This guide will help you understand how order creation works in the CEP system, specifically how the new V2 system (Java/Spring Boot) synchronizes data with the legacy V1 system (.NET).
 
@@ -581,36 +580,36 @@ flowchart TD
     A[V1SyncService.submitNewOrderToV1] --> B{Check if Update<br/>or Create?}
     B -->|Create| C[Log sync: INIT_CREATE]
     B -->|Update| D[Try find legacy_order<br/>3 attempts × 5s delay]
-    
+
     C --> E[Transform V2 DTO → V1 DTO<br/>V1CreateOrderMapper]
     D -->|Found| E
     D -->|Not Found + source=V2| F[Switch to CREATE mode]
     D -->|Not Found + source=V1| G[Log FAILED, send email]
     F --> E
-    
+
     E --> H[Update sync log: IN_PROGRESS, CREATE]
-    H --> I[POST to V1 API<br/>/api/Orders/{hospitalCode}]
-    
+    H --> I["POST to V1 API<br/>/api/Orders/{hospitalCode}"]
+
     I -->|Success| J[V1 returns order GUID]
     I -->|Failure| K[Log FAILED, send email]
-    
+
     J --> L[Save legacy_order<br/>V2 ID ↔ V1 GUID]
     L --> M[Save id_mapping_log<br/>Sample ID mappings]
     M --> N[Update sync log: SUCCESS]
-    
-    N --> O{Is status<br/>SUBMIT?}
+
+    N --> O[s24]
     O -->|Yes| P[POST /approve endpoint]
-    O -->|No| Q{Is status<br/>VOB_SENT?}
-    
+    O -->|No| Q[s23]
+
     P -->|Success| R[Log APPROVE: SUCCESS]
     P -->|Failure| S[Log APPROVE: FAILED, send email]
-    
+
     Q -->|Yes| T[POST /vob endpoint]
     Q -->|No| U[Done]
-    
+
     T -->|Success| V[Log VOB: SUCCESS]
     T -->|Failure| W[Log VOB: FAILED, send email]
-    
+
     R --> X[Save OrderNotificationRecipients<br/>to SQL Server]
     V --> X
     S --> U
